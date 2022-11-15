@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:hive_flutter/adapters.dart';
+import 'package:vehicle_app/db/vehicle_db.dart';
 import 'package:vehicle_app/view/home/screen/home_page.dart';
-import 'db/vehicle_db.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  Hive.registerAdapter(VehicleAdapter());
+  await Hive.openBox<Vehicle>('vehicle');
   runApp(const MyApp());
 }
 
@@ -13,12 +17,9 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return Provider(
-      create: (context) => AppDatabase(),
-      child: const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: HomePage(),
-      ),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: HomePage(),
     );
   }
 }

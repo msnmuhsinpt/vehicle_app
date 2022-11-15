@@ -1,25 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:hive/hive.dart';
 import 'package:vehicle_app/db/vehicle_db.dart';
-import 'package:drift/drift.dart' as dr;
 
 import '../../app_text_field.dart';
 import '../../app_text_view.dart';
+import '../../boxes.dart';
 import '../../util/app_ constant.dart';
 import '../../util/app_color.dart';
 
-class AddVehicle extends StatelessWidget {
+class AddVehicle extends StatefulWidget {
   const AddVehicle({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    AppDatabase appDatabase = Provider.of<AppDatabase>(context);
+  State<AddVehicle> createState() => _AddVehicleState();
+}
 
-    final TextEditingController _vehicleNumber = TextEditingController();
+class _AddVehicleState extends State<AddVehicle> {
+  final TextEditingController _vehicleNumber = TextEditingController();
+
+  @override
+  void dispose() {
+    super.dispose();
+    Hive.close();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           AppTextField(
             controller: _vehicleNumber,
@@ -39,14 +49,13 @@ class AddVehicle extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                appDatabase
-                    .insertVehicle(VehicleCompanion(
-                  vehicleNumber: dr.Value(_vehicleNumber.text),
-                  vehicleStatus: const dr.Value(true),
-                ))
-                    .then(
-                      (value) => Navigator.pop(context),
-                );
+                final vehicle = Vehicle()
+                  ..number = _vehicleNumber.text.toString()
+                  ..isRunning = true;
+
+                final box = Boxes.getData();
+                box.add(vehicle);
+                Navigator.pop(context);
               },
               child: appTextView(
                   name: 'Submit', isBold: true, color: AppColor.kWhite),
@@ -54,7 +63,6 @@ class AddVehicle extends StatelessWidget {
           )
         ],
       ),
-
     );
   }
 }
