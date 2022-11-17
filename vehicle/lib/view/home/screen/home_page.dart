@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:vehicle_app/boxes.dart';
 import 'package:vehicle_app/db/vehicle_db.dart';
-import 'package:vehicle_app/view/add_vehicle/add_vehicle_page.dart';
 import '../../widget/app_text_view.dart';
 import '../../../util/app_ constant.dart';
 import '../../../util/app_color.dart';
+import '../widget/add_vehicle.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key, required}) : super(key: key);
@@ -62,10 +62,9 @@ class _HomePageState extends State<HomePage> {
         // isExtended: true,
         backgroundColor: AppColor.kBlue,
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddVehicle()),
-          );
+          showDialog(
+              context: context,
+              builder: (BuildContext context) => const AddVehicle());
         },
         // isExtended: true,
         child: const Icon(Icons.add),
@@ -87,9 +86,11 @@ class _HomePageState extends State<HomePage> {
           var value = vehicle[index].animationValue;
           _updateProgress(vehicle, index);
           return vehicle.isEmpty
-              ? Center(
-                  child: appTextView(
-                      name: 'No Vehicle Listed Add Vehicle', isBold: true),
+              ? Expanded(
+                  child: Center(
+                    child: appTextView(
+                        name: 'No Vehicle Listed Add Vehicle', isBold: true),
+                  ),
                 )
               : isRunning
                   ? SizedBox(
@@ -101,7 +102,7 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: ListTile(
-                          title: appTextView(name: number, isBold: true),
+                          title: appTextView(name: number, isBold: true,size: 25),
                           trailing: CircularProgressIndicator(
                             strokeWidth: 10,
                             valueColor: const AlwaysStoppedAnimation<Color>(
@@ -113,17 +114,30 @@ class _HomePageState extends State<HomePage> {
                       ),
                     )
                   : Container(
-                      height: 60,
+                      height: 55,
                       decoration: BoxDecoration(
                         color: AppColor.kRed,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       width: screenWidth(context),
-                      child: Center(
-                        child: appTextView(
-                            name: 'Running',
-                            isBold: true,
-                            color: AppColor.kWhite),
+                      padding: commonPaddingAll,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          appTextView(
+                              name: number,
+                              isBold: true,
+                              size: 25,
+                              color: AppColor.kWhite),
+                          const Align(
+                            alignment: Alignment.topRight,
+                            child:  Icon(
+                              Icons.arrow_circle_right,
+                              size: 35,
+                              color: AppColor.kWhite,
+                            ),
+                          )
+                        ],
                       ),
                     );
         },
@@ -153,7 +167,7 @@ class _HomePageState extends State<HomePage> {
         : Timer.periodic(oneSec, (Timer t) {
             var cTime = DateTime.now();
             final difference = cTime.difference(aTime).inSeconds;
-            if (difference >= 3) {
+            if (difference >= 30) {
               //value update
               final vehicleUpdateRunning = Vehicle()
                 ..number = vehicleNumber
@@ -164,8 +178,8 @@ class _HomePageState extends State<HomePage> {
               box.putAt(index, vehicleUpdateRunning);
             } else {
               setState(() {
-                //value
-                pValue = (difference / 3);
+                //get animation value
+                pValue = (difference / 30);
 
                 final vehicleUpdateValue = Vehicle()
                   ..number = vehicleNumber
