@@ -8,4 +8,8 @@ class Vehicle extends HiveObject {
   late String number;
   @HiveField(1)
   late bool isRunning = false;
+  @HiveField(2)
+  late String startTime = '';
+  @HiveField(3)
+  late double animationValue = 0.0;
 }

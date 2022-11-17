@@ -1,13 +1,10 @@
-import 'dart:developer';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:vehicle_app/boxes.dart';
 import 'package:vehicle_app/db/vehicle_db.dart';
 import 'package:vehicle_app/view/add_vehicle/add_vehicle_page.dart';
-
-import '../../../app_text_view.dart';
+import '../../widget/app_text_view.dart';
 import '../../../util/app_ constant.dart';
 import '../../../util/app_color.dart';
 
@@ -19,6 +16,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  var progressValue = 0.00;
+  var pValue = 0.00;
+
   @override
   void initState() {
     super.initState();
@@ -27,7 +27,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     super.dispose();
-    Hive.close();
   }
 
   @override
@@ -42,22 +41,21 @@ class _HomePageState extends State<HomePage> {
             color: AppColor.kWhite),
         backgroundColor: AppColor.kBlue,
       ),
-      body: Column(
-        children: [
-          ValueListenableBuilder<Box<Vehicle>>(
-              valueListenable: Boxes.getData().listenable(),
-              builder: (context, box, _) {
-                final vehicle = box.values.toList().cast<Vehicle>();
+      body: Padding(
+        padding: commonPaddingAll,
+        child: Column(
+          children: [
+            ValueListenableBuilder<Box<Vehicle>>(
+                valueListenable: Boxes.getData().listenable(),
+                builder: (context, box, _) {
+                  final vehicle = box.values.toList().cast<Vehicle>();
 
-                return Expanded(
-                  child: ListView(
-                    children: [
-                      vehicleListUi(vehicle),
-                    ],
-                  ),
-                );
-              }),
-        ],
+                  return Expanded(
+                    child: vehicleListUi(vehicle),
+                  );
+                }),
+          ],
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
       floatingActionButton: FloatingActionButton(
@@ -86,6 +84,8 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           String number = vehicle[index].number.toString();
           bool isRunning = vehicle[index].isRunning;
+          var value = vehicle[index].animationValue;
+          _updateProgress(vehicle, index);
           return vehicle.isEmpty
               ? Center(
                   child: appTextView(
@@ -93,49 +93,89 @@ class _HomePageState extends State<HomePage> {
                 )
               : isRunning
                   ? SizedBox(
-                      height: 85,
-                      child: InkWell(
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: ListTile(
-                              title: appTextView(name: number),
-                              trailing: CircularPercentIndicator(
-                                animation: true,
-                                radius: 20.0,
-                                percent: 1.0,
-                                progressColor: Colors.green,
-                                animationDuration: 3000,
-                                onAnimationEnd: () {
-                                  final vehicleUpdate = Vehicle()
-                                    ..number = number
-                                    ..isRunning = false;
-                                  final box = Boxes.getData();
-                                  box.putAt(index, vehicleUpdate);
-                                  //  vehicleUpdate.save();
-                                },
-                              )),
+                      height: 60,
+                      width: screenWidth(context),
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        onTap: () {
-                          log('Status >> $isRunning');
-                        },
+                        child: ListTile(
+                          title: appTextView(name: number, isBold: true),
+                          trailing: CircularProgressIndicator(
+                            strokeWidth: 10,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColor.kGreen,
+                            ),
+                            value: value,
+                          ),
+                        ),
                       ),
                     )
-                  : InkWell(
-            onTap: ()=>log("Status>>> $isRunning") ,
-                    child: Container(
+                  : Container(
+                      height: 60,
+                      decoration: BoxDecoration(
                         color: AppColor.kRed,
-                        child: Center(
-                          child: appTextView(
-                              name: 'Running',
-                              isBold: true,
-                              color: AppColor.kWhite),
-                        ),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                  );
+                      width: screenWidth(context),
+                      child: Center(
+                        child: appTextView(
+                            name: 'Running',
+                            isBold: true,
+                            color: AppColor.kWhite),
+                      ),
+                    );
         },
       ),
     );
+  }
+
+  void _updateProgress(List<Vehicle> vehicle, int index) {
+    bool isTimerClose = false;
+    var addedTime = vehicle[index].startTime;
+    var isRunning = vehicle[index].isRunning;
+    var vehicleNumber = vehicle[index].number;
+    var value = vehicle[index].animationValue;
+
+    for (int i = 0; i < vehicle.length; i++) {
+      if (vehicle[i].isRunning == false) {
+        isTimerClose = true;
+      } else {
+        isTimerClose = false;
+      }
+    }
+
+    var aTime = DateTime.parse(addedTime);
+    const oneSec = Duration(seconds: 1);
+    isTimerClose
+        ? Container()
+        : Timer.periodic(oneSec, (Timer t) {
+            var cTime = DateTime.now();
+            final difference = cTime.difference(aTime).inSeconds;
+            if (difference >= 3) {
+              //value update
+              final vehicleUpdateRunning = Vehicle()
+                ..number = vehicleNumber
+                ..isRunning = false
+                ..startTime = addedTime
+                ..animationValue = value;
+              final box = Boxes.getData();
+              box.putAt(index, vehicleUpdateRunning);
+            } else {
+              setState(() {
+                //value
+                pValue = (difference / 3);
+
+                final vehicleUpdateValue = Vehicle()
+                  ..number = vehicleNumber
+                  ..isRunning = isRunning
+                  ..startTime = addedTime
+                  ..animationValue = pValue.toDouble();
+                final box = Boxes.getData();
+                box.putAt(index, vehicleUpdateValue);
+              });
+            }
+          });
   }
 }

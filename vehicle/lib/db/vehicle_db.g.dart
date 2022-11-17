@@ -18,17 +18,23 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
     };
     return Vehicle()
       ..number = fields[0] as String
-      ..isRunning = fields[1] as bool;
+      ..isRunning = fields[1] as bool
+      ..startTime = fields[2] as String
+      ..animationValue = fields[3] as double;
   }
 
   @override
   void write(BinaryWriter writer, Vehicle obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.number)
       ..writeByte(1)
-      ..write(obj.isRunning);
+      ..write(obj.isRunning)
+      ..writeByte(2)
+      ..write(obj.startTime)
+      ..writeByte(3)
+      ..write(obj.animationValue);
   }
 
   @override
